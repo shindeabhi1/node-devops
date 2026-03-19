@@ -1,0 +1,17 @@
+# Node
+node_modules/
+
+# Allure reports
+allure-results/
+allure-report/
+
+# Environment files
+.env
+.env.*
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
