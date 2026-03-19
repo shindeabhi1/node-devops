@@ -1,49 +1,87 @@
-name: Node DevOps CI Pipeline
+name: Node DevOps CI + Sonar + ZAP
 
 on:
   push:
     branches: [ "main" ]
 
 jobs:
-  build-test-push:
+  pipeline:
     runs-on: ubuntu-latest
 
     steps:
+    # Checkout code
     - name: Checkout code
       uses: actions/checkout@v4
 
+    # Setup Node
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: 18
 
+    # Install dependencies
     - name: Install dependencies
       run: npm install
 
+    # Run tests
     - name: Run tests
       run: npm test
 
+    # Generate Allure report
     - name: Generate Allure Report
       run: npm run allure:generate
 
+    # Upload Allure report
     - name: Upload Allure Report
       uses: actions/upload-artifact@v4
       with:
         name: allure-report
         path: allure-report
 
+    # SonarCloud Scan
+    - name: SonarCloud Scan
+      uses: SonarSource/sonarcloud-github-action@v2
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      with:
+        args: >
+          -Dsonar.organization=shindeabhi1
+          -Dsonar.projectKey=shindeabhi1_devsecops
+          -Dsonar.sources=.
+
+    # Build Docker image
     - name: Build Docker image
       run: docker build -t node-devops-app .
 
-    - name: Login to AWS ECR
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    # ✅ FIX: Configure AWS credentials (MANDATORY)
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ap-south-1
+
+    # Login to Amazon ECR
+    - name: Login to Amazon ECR
       run: |
         aws ecr get-login-password --region ap-south-1 |
         docker login --username AWS --password-stdin 887056859187.dkr.ecr.ap-south-1.amazonaws.com
 
-    - name: Push Docker image
+    # Push Docker image
+    - name: Push Docker Image
       run: |
         docker tag node-devops-app:latest 887056859187.dkr.ecr.ap-south-1.amazonaws.com/node-devops-app:latest
         docker push 887056859187.dkr.ecr.ap-south-1.amazonaws.com/node-devops-app:latest
+
+    # ✅ Start app for ZAP scan
+    - name: Start application
+      run: |
+        npm start &
+        sleep 15
+
+    # OWASP ZAP Baseline Scan
+    - name: OWASP ZAP Baseline Scan
+      uses: zaproxy/action-baseline@v0.10.0
+      with:
+        target: http://localhost:3000
+        fail_action: false
