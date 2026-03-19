@@ -13,11 +13,11 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # 2. Setup Node.js
+    # 2. Setup Node.js (Cypress requires Node 20+)
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: 18
+        node-version: 20
 
     # 3. Install dependencies
     - name: Install dependencies
@@ -56,7 +56,7 @@ jobs:
         aws ecr get-login-password --region ap-south-1 |
         docker login --username AWS --password-stdin 887056859187.dkr.ecr.ap-south-1.amazonaws.com
 
-    # 9. Push Docker image
+    # 9. Push Docker image to ECR
     - name: Push Docker image to ECR
       run: |
         docker tag node-devops-app:latest 887056859187.dkr.ecr.ap-south-1.amazonaws.com/node-devops-app:latest
@@ -74,4 +74,3 @@ jobs:
       with:
         target: http://localhost:3000
         fail_action: false
-
