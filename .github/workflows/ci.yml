@@ -49,21 +49,6 @@ jobs:
           -Dsonar.projectKey=shindeabhi1_devsecops
           -Dsonar.sources=.
 
-
-    # ✅ Start app for ZAP scan
-    - name: Start application
-      run: |
-        npm start &
-        sleep 15
-
-    # OWASP ZAP Baseline Scan
-    - name: OWASP ZAP Baseline Scan
-      uses: zaproxy/action-baseline@v0.10.0
-      with:
-        target: http://localhost:3000
-        fail_action: false
-
-    
     # Build Docker image
     - name: Build Docker image
       run: docker build -t node-devops-app .
@@ -87,3 +72,16 @@ jobs:
       run: |
         docker tag node-devops-app:latest 887056859187.dkr.ecr.ap-south-1.amazonaws.com/node-devops-app:latest
         docker push 887056859187.dkr.ecr.ap-south-1.amazonaws.com/node-devops-app:latest
+
+    # ✅ Start app for ZAP scan
+    - name: Start application
+      run: |
+        npm start &
+        sleep 15
+
+    # OWASP ZAP Baseline Scan
+    - name: OWASP ZAP Baseline Scan
+      uses: zaproxy/action-baseline@v0.10.0
+      with:
+        target: http://localhost:3000
+        fail_action: false
