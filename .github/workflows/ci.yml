@@ -9,25 +9,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # 1. Checkout code
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # 2. Setup Node.js (Cypress requires Node 20+)
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: 20
 
-    # 3. Install dependencies
     - name: Install dependencies
       run: npm install
 
-    # 4. Run tests
     - name: Run tests
       run: npm test
 
-    # 5. SonarCloud Scan (SAST)
     - name: SonarCloud Scan
       uses: SonarSource/sonarcloud-github-action@v2
       env:
@@ -38,11 +33,9 @@ jobs:
           -Dsonar.projectKey=shindeabhi1_node-devops
           -Dsonar.sources=.
 
-    # 6. Build Docker image
     - name: Build Docker image
       run: docker build -t node-devops-app .
 
-    # 7. Configure AWS credentials
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
@@ -50,25 +43,21 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ap-south-1
 
-    # 8. Login to AWS ECR
     - name: Login to Amazon ECR
       run: |
         aws ecr get-login-password --region ap-south-1 |
         docker login --username AWS --password-stdin 887056859187.dkr.ecr.ap-south-1.amazonaws.com
 
-    # 9. Push Docker image to ECR
     - name: Push Docker image to ECR
       run: |
         docker tag node-devops-app:latest 887056859187.dkr.ecr.ap-south-1.amazonaws.com/node-devops-app:latest
         docker push 887056859187.dkr.ecr.ap-south-1.amazonaws.com/node-devops-app:latest
 
-    # 10. Start application for ZAP
     - name: Start application
       run: |
         npm start &
         sleep 15
 
-    # 11. OWASP ZAP Scan (DAST)
     - name: OWASP ZAP Baseline Scan
       uses: zaproxy/action-baseline@v0.10.0
       with:
