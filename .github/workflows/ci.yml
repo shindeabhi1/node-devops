@@ -35,7 +35,7 @@ jobs:
       with:
         args: >
           -Dsonar.organization=shindeabhi1
-          -Dsonar.projectKey=shindeabhi1_devsecops
+          -Dsonar.projectKey=shindeabhi1_node-devops
           -Dsonar.sources=.
 
     # 6. Build Docker image
