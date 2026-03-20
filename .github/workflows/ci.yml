@@ -13,7 +13,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # 2. Setup Node.js
+    # 2. Setup Node.js (Cypress requires Node 20+)
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
@@ -46,3 +46,31 @@ jobs:
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ap-south-1
+
+    # 8. Login to AWS ECR
+    - name: Login to Amazon ECR
+      run: |
+        aws ecr get-login-password --region ap-south-1 |
+        docker login --username AWS --password-stdin 887056859187.dkr.ecr.ap-south-1.amazonaws.com
+
+    # 9. Push Docker image to ECR
+    - name: Push Docker image to ECR
+      run: |
+        docker tag node-devops-app:latest 887056859187.dkr.ecr.ap-south-1.amazonaws.com/node-devops-app:latest
+        docker push 887056859187.dkr.ecr.ap-south-1.amazonaws.com/node-devops-app:latest
+
+    # 10. Start application for ZAP
+    - name: Start application
+      run: |
+        npm start &
+        sleep 15
+
+    # 11. OWASP ZAP Scan (DAST)
+    - name: OWASP ZAP Baseline Scan
+      uses: zaproxy/action-baseline@v0.10.0
+      with:
+        target: http://localhost:3000
+        fail_action: false
